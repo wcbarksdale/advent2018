@@ -11,7 +11,7 @@ defmodule Day3 do
         {x,y}
     end
     Enum.reduce(pairs, grid, fn pair, grid ->
-      Map.update(grid, pair, 1, &(&1 + 1))
+      Map.update(grid, pair, [claim[:id]], &([claim[:id] | &1]))
     end)
   end
 
@@ -20,7 +20,11 @@ defmodule Day3 do
   end
 
   def multiple_claim_count(grid) do
-    Map.values(grid) |> Enum.count(fn x -> x > 1 end)
+    Map.values(grid) |> Enum.count(fn x -> Enum.count(x) > 1 end)
+  end
+
+  def claims_overlapping(grid) do
+    Map.values(grid) |> Enum.filter(fn x -> Enum.count(x) > 1 end) |> Enum.reduce(MapSet.new(), &(MapSet.union(MapSet.new(&1), &2)))
   end
 end
 
@@ -29,3 +33,6 @@ IO.inspect claims
 Enum.map(claims, fn (%{:w => w, :h => h}) -> w * h end) |> Enum.sum |> IO.inspect
 IO.inspect(Day3.place_claim(%{}, hd(claims)))
 IO.inspect(Day3.all_claims(claims) |> Day3.multiple_claim_count)
+overlapping = Day3.all_claims(claims) |> Day3.claims_overlapping
+all_claim_ids = Enum.map(claims, &(&1[:id])) |> MapSet.new
+IO.inspect(MapSet.difference(all_claim_ids, overlapping))
