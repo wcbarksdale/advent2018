@@ -36,7 +36,22 @@ defmodule Day4 do
     Enum.flat_map(ranges, &Enum.to_list/1)
     |> Enum.group_by(&(&1))
     |> Enum.max_by(fn {k, v} -> Enum.count(v) end)
-    |> elem(0)
+  end
+
+  def combine_ranges(ranges) do
+    Enum.flat_map(ranges, &Enum.to_list/1)
+    |> Enum.group_by(&(&1))
+    |> Enum.into(%{}, fn {k, v} -> {k, Enum.count(v)} end)
+  end
+
+  def most_per_guard(sleeps) do
+    guards = Enum.map(sleeps, &(&1.guard)) |> Enum.uniq
+    IO.inspect(guards)
+    Map.new(guards, fn guard ->
+      guard_ranges = Enum.filter(sleeps, &(&1.guard == guard)) |> Enum.map(&(&1.range))
+      IO.inspect(guard_ranges)
+      {guard, guard_ranges |> combine_ranges |> Enum.max_by(fn {k, v} -> v end)}
+      end)
   end
 end
 
@@ -47,3 +62,4 @@ Day4.construct_sleeps(parsed) |> IO.inspect
 {sleepiest, _} = Day4.construct_sleeps(parsed) |> Day4.minutes_slept_by_guard |> Enum.max_by(&(elem(&1, 1)))
 IO.inspect(sleepiest)
 Day4.construct_sleeps(parsed) |> Enum.filter(fn (%{guard: g}) -> g == sleepiest end) |> Enum.map(fn (%{range: r}) -> r end) |> Day4.most_frequent |> IO.inspect
+Day4.construct_sleeps(parsed) |> Day4.most_per_guard |> IO.inspect
