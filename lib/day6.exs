@@ -25,8 +25,12 @@ defmodule Day6 do
     left ++ right ++ top ++ bottom
   end
 
+  def distance(x0, y0, x1, y1) do
+    abs(x1 - x0) + abs(y1 - y0)
+  end
+
   def closest(points, x, y) do
-    Enum.min_by(points, fn {x0, y0} -> abs(x - x0) + abs(y - y0) end)
+    Enum.min_by(points, fn {x0, y0} -> distance(x0, y0, x, y) end)
   end
 
   # if a point on the outer bounding box is closest to one of our points, the area
@@ -50,6 +54,22 @@ defmodule Day6 do
     e = all_escaping(points)
     Enum.reject(f, fn {k, v} -> Enum.member?(e, k) end)
   end
+
+  # 200 * 50 = 10000 in itself so we can't be more than 200 from the border
+  def big_bounds(points) do
+    {xs, ys} = Enum.unzip(points)
+    {Enum.min(xs)-200, Enum.max(xs)+200, Enum.min(ys)-200, Enum.max(ys)+200}
+  end
+
+  def sum_distances(points, {x, y}) do
+    Enum.map(points, fn {x0, y0} -> distance(x0, y0, x, y) end) |> Enum.sum
+  end
+  
+  def contained(points, limit \\ 10000) do
+    {min_x, max_x, min_y, max_y} = big_bounds(points)
+    all_pts = for x <- min_x..max_x, y <- min_y..max_y, do: {x, y}
+    Enum.filter(all_pts, fn p -> sum_distances(points, p) < limit end) |> Enum.count
+  end
 end
 
 Day6.pairs |> IO.inspect
@@ -59,3 +79,4 @@ Day6.border({0,3,2,4}) |> IO.inspect
 Day6.pairs |> Day6.all_escaping |> IO.inspect
 freqs = Day6.pairs |> Day6.frequencies_excluding_escaping |> IO.inspect
 Enum.map(freqs, &(elem(&1, 1))) |> Enum.max |> IO.inspect
+Day6.pairs |> Day6.contained |> IO.inspect
