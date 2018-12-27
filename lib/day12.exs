@@ -1,6 +1,6 @@
 defmodule Day12 do
   # pair of lists; [-1,-2,-3,...] [0,1,2,...]
-  def show({left, right}, padding \\ 40) do
+  def show({left, right}, padding \\ 5) do
     pad_list = List.duplicate(".", max(padding - Enum.count(left), 0))
     #IO.inspect({left, Enum.count(left), pad_list})
     ((left ++ pad_list) |> Enum.reverse |> Enum.join) <> "|" <> Enum.join(right)
@@ -22,17 +22,21 @@ defmodule Day12 do
     rulelines |> Enum.map(&String.split(&1, " => ", trim: true) |> List.to_tuple) |> Map.new
   end
 
+  def trim_at_end(side) do
+    Enum.reverse(side) |> Enum.drop_while(fn x -> x == "." end) |> Enum.reverse
+  end
+  
   def apply(ruleset, gen) do
     {left, right} = gen
-    new_left = -1..(-Enum.count(left)-2) |> Enum.map(&Day12.neighborhood5(gen, &1)) |> Enum.map(&Map.get(ruleset, &1))
-    new_right = 0..(Enum.count(right)+1) |> Enum.map(&Day12.neighborhood5(gen, &1)) |> Enum.map(&Map.get(ruleset, &1))
+    new_left = -1..(-Enum.count(left)-2) |> Enum.map(&Day12.neighborhood5(gen, &1)) |> Enum.map(&Map.get(ruleset, &1)) |> trim_at_end
+    new_right = 0..(Enum.count(right)+1) |> Enum.map(&Day12.neighborhood5(gen, &1)) |> Enum.map(&Map.get(ruleset, &1)) |> trim_at_end
     {new_left, new_right}
   end
 
   def iterate(ruleset, start_gen, 0) do start_gen end
   def iterate(ruleset, start_gen, n) do
     next_gen = Day12.apply(ruleset, start_gen)
-    IO.inspect(show(next_gen))
+    #IO.inspect(show(next_gen))
     iterate(ruleset, next_gen, n-1)
   end
 
@@ -56,4 +60,10 @@ ruleset = Day12.parse_ruleset(rulelines)
 Day12.show(gen) |> IO.puts
 #Day12.apply(ruleset, gen) |> Day12.show |> IO.puts
 
-Day12.iterate(ruleset, gen, 20) |> Day12.score |> IO.puts
+Day12.iterate(ruleset, gen, 200) |> Day12.score |> IO.puts
+Day12.iterate(ruleset, gen, 201) |> Day12.score |> IO.puts
+Day12.iterate(ruleset, gen, 202) |> Day12.score |> IO.puts
+
+# 6801 = 200 gens (and steady at this point)
+# +32 for each successive gen
+(50000000000 - 200) * 32 + 6801 |> IO.inspect
