@@ -1,6 +1,8 @@
 defmodule Cart do
-  defstruct [:x, :y, :heading, {:next_turn, :left}]
+  defstruct [:x, :y, :heading, {:next_turn, :left}, {:status, :running}]
 
+  def step(%Cart{status: :crashed} = cart) do cart end
+  
   def step(%Cart{heading: :west} = cart) do %{cart | x: cart.x - 1} end
   def step(%Cart{heading: :east} = cart) do %{cart | x: cart.x + 1} end
   def step(%Cart{heading: :north} = cart) do %{cart | y: cart.y - 1} end
@@ -38,6 +40,9 @@ defmodule Cart do
   
   def turn(cart, "+") do intersection(cart) end
 
+  def crash do
+    %Cart{status: :crashed}
+  end
 end
 
 defmodule Day13 do
@@ -77,8 +82,9 @@ defmodule Day13 do
 
   def tick_or_crash(cart, other_carts, lines) do
     cart = Cart.step(cart)
+    
     if Enum.any?(other_carts, fn c -> c.x == cart.x && c.y == cart.y end) do
-      {:crash, cart.x, cart.y}
+      Cart.crash
     else
       space = Enum.at(lines, cart.y) |> String.at(cart.x)
       Cart.turn(cart, space)
@@ -113,10 +119,69 @@ defmodule Day13 do
         run(carts, lines)
     end
   end
+
+  def tick_or_crash2(cart, other_carts, lines) do
+    cart = Cart.step(cart)
+    if cart.status == :crashed do
+      # crashed previously, no update needed
+      cart
+    else
+      if Enum.any?(other_carts, fn c -> c.x == cart.x && c.y == cart.y end) do
+        {:crash, cart.x, cart.y}
+      else
+        space = Enum.at(lines, cart.y) |> String.at(cart.x)
+        Cart.turn(cart, space)
+      end
+    end
+  end
+
+  def tick_subtick2(carts, index, lines) when index == length(carts) do carts end
+
+  def find_all_index(enumerable, fun) do
+    Enum.with_index(enumerable)
+    |> Enum.filter(fn ({v, i}) -> fun.(v) end)
+    |> Enum.unzip
+    |> elem(1)
+  end
+  
+  def tick_subtick2(carts, index, lines) do
+    cart = Enum.at(carts, index)
+    {prefix, suffix} = Enum.split(carts, index)
+    other_carts = prefix ++ (tl suffix)
+    cart_or_crash = tick_or_crash2(cart, other_carts, lines)
+    case cart_or_crash do
+      {:crash, x, y} ->
+        # remove the existing cart at this x,y
+        crashed_indices = find_all_index(carts, fn cart -> cart.x == x && cart.y == y end)
+        IO.inspect(carts)
+        IO.inspect(other_carts)
+        [crash1] = crashed_indices |> IO.inspect
+        IO.inspect([:removing, crash1, index])
+        List.replace_at(carts, crash1, Cart.crash) |> List.replace_at(index, Cart.crash)
+      cart -> List.replace_at(carts, index, cart) |> tick_subtick2(index+1, lines)
+    end
+  end
+  
+  def tick2(carts, lines) do
+    carts = Enum.sort_by(carts, fn cart -> {cart.y, cart.x} end)
+    tick_subtick2(carts, 0, lines)
+  end
+
+  def run2(carts, lines) do
+    #show(carts, lines) |> IO.puts
+    carts_or_crash = tick2(carts, lines)
+    case Enum.filter(carts_or_crash, fn cart -> cart.status == :running end) do
+      [cart] -> IO.inspect({:finalcart, cart})
+      carts -> 
+        #Process.sleep(100)
+        run2(carts, lines)
+    end
+  end
 end
 
 {carts, lines} = File.read!("day13input.txt") |> String.split("\n") |> Day13.extract_carts
 Enum.map(lines, &IO.puts/1)
 IO.inspect(carts)
 
-Day13.run(carts, lines)
+Day13.find_all_index([1,2,3,4,5], fn v -> rem(v, 2) == 0 end) |> IO.inspect
+Day13.run2(carts, lines)
