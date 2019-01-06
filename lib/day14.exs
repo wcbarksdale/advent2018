@@ -8,17 +8,25 @@ defmodule Day14 do
     end
   end
 
+  def array_append_list(arr, []) do
+    arr
+  end
+
+  def array_append_list(arr, [x | xs]) do
+    array_append_list(:array.set(:array.size(arr), x, arr), xs)
+  end
+  
   def step(recipes, elfa, elfb) do
-    a = Enum.at(recipes, elfa)
-    b = Enum.at(recipes, elfb)
-    recipes_extended = recipes ++ new_recipes(a, b)
+    a = :array.get(elfa, recipes)
+    b = :array.get(elfb, recipes)
+    recipes_extended = array_append_list(recipes, new_recipes(a, b))
     #IO.inspect({elfa + 1 + a, Enum.count(recipes_extended)})
-    new_elfa = rem(elfa + 1 + a, Enum.count(recipes_extended))
-    new_elfb = rem(elfb + 1 + b, Enum.count(recipes_extended))
+    new_elfa = rem(elfa + 1 + a, :array.size(recipes_extended))
+    new_elfb = rem(elfb + 1 + b, :array.size(recipes_extended))
     {recipes_extended, new_elfa, new_elfb}
   end
 
-  def run({recipes, elfa, elfb}, 0) do recipes end
+  def run({recipes, _elfa, _elfb}, 0) do recipes end
 
   def run({recipes, elfa, elfb}, count) do
     if rem(count, 1000) == 0 do
@@ -27,6 +35,13 @@ defmodule Day14 do
     #IO.inspect({recipes, elfa, elfb})
     run(step(recipes, elfa, elfb), count-1)
   end
+
+  def go(initial_list, offset, count \\ 10) do
+    run({:array.from_list(initial_list), 0, 1}, offset + count + 100)
+    |> :array.to_list
+    |> Enum.drop(offset)
+    |> Enum.take(count)
+  end
 end
 
 Day14.new_recipes(3, 7) |> IO.inspect
@@ -34,6 +49,12 @@ Day14.new_recipes(9, 9) |> IO.inspect
 Day14.new_recipes(2, 3) |> IO.inspect
 Day14.new_recipes(0,0) |> IO.inspect
 
-Day14.run({[3,7],0,1}, 15)
-{r, _, _} = Day14.run({[8,4,6,6,0,1],0,1}, 850000)
-Enum.drop(r, 846601) |> Enum.take(10) |> IO.inspect
+#Day14.run({[3,7],0,1}, 15)
+#r = Day14.run({:array.from_list([8,4,6,6,0,1]),0,1}, 850000)
+#:array.to_list(r) |> Enum.drop(846601) |> Enum.take(10) |> IO.inspect
+
+Day14.go([3,7], 9) |> IO.inspect
+Day14.go([3,7], 5) |> IO.inspect
+Day14.go([3,7], 18) |> IO.inspect
+Day14.go([3,7], 2018) |> IO.inspect
+Day14.go([3,7], 846601) |> IO.inspect
