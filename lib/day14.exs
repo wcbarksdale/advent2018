@@ -29,9 +29,9 @@ defmodule Day14 do
   def run({recipes, _elfa, _elfb}, 0) do recipes end
 
   def run({recipes, elfa, elfb}, count) do
-    if rem(count, 1000) == 0 do
-      IO.inspect(count)
-      end
+    #if rem(count, 1000) == 0 do
+    #  IO.inspect(count)
+    #  end
     #IO.inspect({recipes, elfa, elfb})
     run(step(recipes, elfa, elfb), count-1)
   end
@@ -41,6 +41,13 @@ defmodule Day14 do
     |> :array.to_list
     |> Enum.drop(offset)
     |> Enum.take(count)
+  end
+
+  def find_digits(initial, digit_string) do
+    run({:array.from_list(initial), 0, 1}, 10000000)
+    |> :array.to_list
+    |> Enum.join
+    |> :binary.match(digit_string)
   end
 end
 
@@ -58,3 +65,10 @@ Day14.go([3,7], 5) |> IO.inspect
 Day14.go([3,7], 18) |> IO.inspect
 Day14.go([3,7], 2018) |> IO.inspect
 Day14.go([3,7], 846601) |> IO.inspect
+
+a = Day14.run({:array.from_list([3,7]), 0, 1}, 100000000) |> :array.to_list |> Enum.join
+:binary.match(a, "51589") |> IO.inspect
+:binary.match(a, "01245") |> IO.inspect
+:binary.match(a, "92510") |> IO.inspect
+:binary.match(a, "59414") |> IO.inspect
+:binary.match(a, "846601") |> IO.inspect
